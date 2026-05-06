@@ -31,12 +31,33 @@ services:
       ZPLGRID_ENABLE_LABELARY_TEMPLATES: "1"
       ZPLGRID_CORS_ORIGINS: "http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174,http://localhost:5175,http://127.0.0.1:5175"
       WATCHFILES_FORCE_POLLING: "true"
+    depends_on:
+      zpl-printer-emulator:
+        condition: service_started
     ports:
       - "8001:8000"
     volumes:
       - ../PrintHub-ZPL-ll:/app
+      - ./dev/printhub-printers.yml:/app/configs/printers.yml:ro
       - printhub_dev_data:/data
     command: uvicorn zplgrid.api:app --host 0.0.0.0 --port 8000 --reload
+
+  zpl-printer-emulator:
+    build:
+      context: ../ZPL-II-Printer-Emulator
+      dockerfile: Dockerfile
+    container_name: thingdex-dev-zpl-printer-emulator
+    environment:
+      ZPL_EMULATOR_HOST: 0.0.0.0
+      ZPL_EMULATOR_WEB_PORT: "9191"
+      ZPL_EMULATOR_TCP_HOST: 0.0.0.0
+      ZPL_EMULATOR_TCP_PORT: "9100"
+      ZPL_EMULATOR_LABEL_WIDTH_IN: "1.9685"
+      ZPL_EMULATOR_LABEL_HEIGHT_IN: "0.9843"
+      ZPL_EMULATOR_DPMM: "8"
+    ports:
+      - "9191:9191"
+      - "9102:9100"
 
   thingdex-api:
     build:
@@ -99,6 +120,7 @@ services:
       VITE_PRINTER_HUB_BASE_URL: /ext/printhub
       VITE_PRINTER_HUB_UPSTREAM: http://printhub-api:8000/v1
       VITE_FEATURE_LABEL_PRINTING: "true"
+      VITE_DEFAULT_PRINTER_ID: virtual-zpl-dev
     depends_on:
       thingdex-api:
         condition: service_started
@@ -131,6 +153,7 @@ services:
     environment:
       CHOKIDAR_USEPOLLING: "true"
       WATCHPACK_POLLING: "true"
+      LG_DEFAULT_PRINTER_ID: virtual-zpl-dev
     depends_on:
       printhub-api:
         condition: service_started

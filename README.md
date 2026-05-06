@@ -92,6 +92,7 @@ Damit entsteht eine saubere Trennung zwischen:
 | [`LabelArchitect`](https://github.com/Hartmannlight/LabelArchitect) | Visueller Editor fuer zplgrid-Templates |
 | [`LabelGallery`](https://github.com/Hartmannlight/LabelGallery) | Template-Browser, Draft-/Operator-UI und Printer-nahe Print-Oberflaeche |
 | [`PrintHub-ZPL-ll`](https://github.com/Hartmannlight/PrintHub-ZPL-ll) | ZPL-Render-, Preview-, Template-, Draft- und Print-Service |
+| [`ZPL-II-Printer-Emulator`](https://github.com/Hartmannlight/ZPL-II-Printer-Emulator) | Virtueller ZPL-II-Dev-Drucker mit Raw-9100-Empfang und Web-Preview |
 | `thingdex-sdk` | Lokales TypeScript-SDK fuer den Thingdex-OpenAPI-Contract |
 | `printhub-sdk` | Lokales TypeScript-SDK fuer den PrintHub-OpenAPI-Contract |
 
@@ -120,6 +121,7 @@ flowchart LR
     TD --> DB[(PostgreSQL)]
     TD --> PH
     PH --> PR[Label Printer via raw 9100]
+    PH --> VPR[ZPL-II Printer Emulator via raw 9100]
 ```
 
 ### Contract-basierte Zugriffsschicht
@@ -295,6 +297,10 @@ PrintHub kann:
 - oder template-basierte Druckjobs ausfuehren.
 
 Der eigentliche Versand an den Drucker erfolgt ueber eine Zebra-typische Raw-9100-Verbindung.
+Im Docker-Dev-Stack ist dafuer standardmaessig der virtuelle Drucker
+`virtual-zpl-dev` konfiguriert. PrintHub sendet dann an den Service
+`zpl-printer-emulator:9100`; dessen Weboberflaeche zeigt die gerenderten Labels
+unter `http://localhost:9191`.
 
 ### 7. API-Contract als technische Trennschicht
 
@@ -946,6 +952,7 @@ Das SDK soll PrintHub-nahe Frontends auf eine gemeinsame, konsistente API-Basis 
 | PrintHub / zplgrid | Render, Preview, Templates, Drafts, Printers, physischer Druck |
 | thingdex-sdk | Client-/Typ-Vertrag fuer Thingdex |
 | printhub-sdk | Client-/Typ-Vertrag fuer PrintHub |
+| ZPL-II-Printer-Emulator | Virtueller Raw-9100-Drucker fuer Entwicklung und Tests |
 
 ## Fachliche Zuordnung
 
@@ -956,6 +963,7 @@ Das SDK soll PrintHub-nahe Frontends auf eine gemeinsame, konsistente API-Basis 
 | Label-Layout-Authoring | LabelArchitect |
 | Template-/Draft-/Printer-UI | LabelGallery |
 | ZPL-II-Rendering und Druck | PrintHub / zplgrid |
+| Virtueller Dev-Druck | ZPL-II-Printer-Emulator |
 | API-Contract fuer Inventar | thingdex-sdk |
 | API-Contract fuer Label-/Printer-Flows | printhub-sdk |
 
@@ -984,6 +992,7 @@ dev/
   PrintHub-ZPL-ll/
   LabelArchitect/
   LabelGallery/
+  ZPL-II-Printer-Emulator/
   thingdex-sdk/
   printhub-sdk/
 ```
@@ -1019,6 +1028,7 @@ Der Dev-Stack startet:
 |---|---|
 | Thingdex API | `http://localhost:8000/docs` |
 | PrintHub API | `http://localhost:8001/docs` |
+| ZPL-II Printer Emulator | `http://localhost:9191` |
 | ThingdexUI | `http://localhost:5173` |
 | LabelGallery | `http://localhost:5174` |
 | LabelArchitect | `http://localhost:5175` |
@@ -1029,6 +1039,7 @@ Weitere Befehle:
 docker compose -f docker-compose.dev.yml ps
 docker compose -f docker-compose.dev.yml logs -f thingdex-api
 docker compose -f docker-compose.dev.yml logs -f printhub-api
+docker compose -f docker-compose.dev.yml logs -f zpl-printer-emulator
 docker compose -f docker-compose.dev.yml down
 ```
 
@@ -1038,6 +1049,7 @@ neu bauen:
 ```powershell
 docker compose -f docker-compose.dev.yml up -d --build thingdex-api
 docker compose -f docker-compose.dev.yml up -d --build printhub-api
+docker compose -f docker-compose.dev.yml up -d --build zpl-printer-emulator
 docker compose -f docker-compose.dev.yml restart thingdex-ui labelgallery labelarchitect
 ```
 
@@ -1050,8 +1062,17 @@ PrintHub braucht Linux/native Bibliotheken wie `libdmtx`, und die Frontends
 brauchen konsistente `file:`-Dependencies auf die lokalen SDK-Repos. Dieses Setup
 haelt alles in Linux-Containern, ohne nach jeder Codeaenderung neu zu bauen.
 
-Hinweis: PNG-Previews nutzen Labelary ueber PrintHub. Ohne Internetverbindung
-laufen APIs und UIs weiter, aber Preview-Endpunkte koennen dann fehlschlagen.
+Im Dev-Stack ist `virtual-zpl-dev` der Standarddrucker. Die Konfiguration liegt
+in `dev/printhub-printers.yml` und wird in den PrintHub-Container als
+`/app/configs/printers.yml` gemountet. ThingdexUI und LabelGallery verwenden
+diese ID ebenfalls als vorausgewaehlten Drucker. Der Emulator ist im Docker-Netz
+unter `zpl-printer-emulator:9100` erreichbar; fuer Tests vom Host aus ist der
+TCP-Port als `localhost:9102` veroeffentlicht, damit lokale echte Drucker auf
+`9100` nicht blockiert werden.
+
+Hinweis: PNG-Previews nutzen Labelary ueber PrintHub beziehungsweise den
+ZPL-II-Printer-Emulator. Ohne Internetverbindung laufen APIs und UIs weiter,
+aber Preview- und Emulator-Rendering koennen dann fehlschlagen.
 
 ---
 
@@ -1129,6 +1150,7 @@ ThingdexUI -> PrintHub optional
 LabelArchitect -> PrintHub
 LabelGallery -> PrintHub
 PrintHub -> Label Printer (TCP 9100)
+PrintHub -> ZPL-II Printer Emulator (Dev, TCP 9100)
 ```
 
 Je nach Setup koennen einzelne UIs natuerlich auch unter einem gemeinsamen Host oder Pfad betrieben werden.
