@@ -1,0 +1,192 @@
+services:
+  db:
+    image: postgres:15
+    container_name: thingdex-dev-db
+    environment:
+      POSTGRES_USER: thingdex
+      POSTGRES_PASSWORD: thingdex
+      POSTGRES_DB: thingdex
+    ports:
+      - "5432:5432"
+    volumes:
+      - thingdex_dev_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U thingdex -d thingdex"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  printhub-api:
+    build:
+      context: ../PrintHub-ZPL-ll
+      dockerfile: Dockerfile
+    container_name: thingdex-dev-printhub-api
+    working_dir: /app
+    environment:
+      ZPLGRID_TEMPLATES_DIR: /data/templates
+      ZPLGRID_PRINT_DRAFTS_DIR: /data/drafts
+      ZPLGRID_COUNTERS_PATH: /data/counters.json
+      ZPLGRID_ENABLE_LABELARY_API: "1"
+      ZPLGRID_ENABLE_LABELARY_PREVIEW: "1"
+      ZPLGRID_ENABLE_LABELARY_TEMPLATES: "1"
+      ZPLGRID_CORS_ORIGINS: "http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174,http://localhost:5175,http://127.0.0.1:5175"
+      WATCHFILES_FORCE_POLLING: "true"
+    ports:
+      - "8001:8000"
+    volumes:
+      - ../PrintHub-ZPL-ll:/app
+      - printhub_dev_data:/data
+    command: uvicorn zplgrid.api:app --host 0.0.0.0 --port 8000 --reload
+
+  thingdex-api:
+    build:
+      context: ../Thingdex
+      dockerfile: Dockerfile
+    container_name: thingdex-dev-api
+    working_dir: /app
+    environment:
+      DATABASE_URL: postgresql+psycopg://thingdex:thingdex@db:5432/thingdex
+      ROOT_LOCATION_NAME: World
+      LABEL_PRINTING_ENABLED: "true"
+      LABEL_API_BASE: http://printhub-api:8000/v1
+      PRINTHUB_API_BASE: http://printhub-api:8000
+      LABEL_CONTAINER_TEMPLATE_ID: container-name
+      WATCHFILES_FORCE_POLLING: "true"
+    depends_on:
+      db:
+        condition: service_healthy
+      printhub-api:
+        condition: service_started
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../Thingdex:/app
+    command: sh -c "alembic upgrade head && uvicorn thingdex.main:app --host 0.0.0.0 --port 8000 --reload"
+
+  thingdex-sdk:
+    image: node:20-alpine
+    container_name: thingdex-dev-thingdex-sdk
+    working_dir: /workspace/thingdex-sdk
+    environment:
+      CHOKIDAR_USEPOLLING: "true"
+    volumes:
+      - ../thingdex-sdk:/workspace/thingdex-sdk
+      - thingdex_sdk_node_modules:/workspace/thingdex-sdk/node_modules
+    command: sh -c "npm install --package-lock=false && npm run generate && npx tsc -p tsconfig.json --watch --preserveWatchOutput"
+
+  printhub-sdk:
+    image: node:20-alpine
+    container_name: thingdex-dev-printhub-sdk
+    working_dir: /workspace/printhub-sdk
+    environment:
+      CHOKIDAR_USEPOLLING: "true"
+    volumes:
+      - ../printhub-sdk:/workspace/printhub-sdk
+      - printhub_sdk_node_modules:/workspace/printhub-sdk/node_modules
+    command: sh -c "npm install --package-lock=false && npm run generate && npx tsc -p tsconfig.json --watch --preserveWatchOutput"
+
+  thingdex-ui:
+    image: node:20-alpine
+    container_name: thingdex-dev-ui
+    working_dir: /workspace/ThingdexUI
+    environment:
+      CHOKIDAR_USEPOLLING: "true"
+      WATCHPACK_POLLING: "true"
+      VITE_API_BASE_URL: /api
+      VITE_API_UPSTREAM: http://thingdex-api:8000
+      VITE_LABEL_SERVICE_BASE_URL: /ext/label
+      VITE_LABEL_SERVICE_UPSTREAM: http://printhub-api:8000/v1
+      VITE_PRINTER_HUB_BASE_URL: /ext/printhub
+      VITE_PRINTER_HUB_UPSTREAM: http://printhub-api:8000/v1
+      VITE_FEATURE_LABEL_PRINTING: "true"
+    depends_on:
+      thingdex-api:
+        condition: service_started
+      thingdex-sdk:
+        condition: service_started
+      printhub-sdk:
+        condition: service_started
+    ports:
+      - "5173:5173"
+    volumes:
+      - ../ThingdexUI:/workspace/ThingdexUI
+      - ../thingdex-sdk:/workspace/thingdex-sdk
+      - ../printhub-sdk:/workspace/printhub-sdk
+      - thingdex_sdk_node_modules:/workspace/thingdex-sdk/node_modules
+      - printhub_sdk_node_modules:/workspace/printhub-sdk/node_modules
+      - thingdex_ui_node_modules:/workspace/ThingdexUI/node_modules
+    command: >
+      sh -c "npm install --package-lock=false &&
+      mkdir -p node_modules/@thingdex node_modules/@printhub &&
+      rm -rf node_modules/@thingdex/sdk node_modules/@printhub/sdk &&
+      ln -s /workspace/thingdex-sdk node_modules/@thingdex/sdk &&
+      ln -s /workspace/printhub-sdk node_modules/@printhub/sdk &&
+      until [ -f /workspace/thingdex-sdk/dist/index.js ] && [ -f /workspace/printhub-sdk/dist/index.js ]; do echo 'waiting for SDK builds'; sleep 2; done &&
+      npm run dev -- --host 0.0.0.0 --port 5173"
+
+  labelgallery:
+    image: node:20-alpine
+    container_name: thingdex-dev-labelgallery
+    working_dir: /workspace/LabelGallery
+    environment:
+      CHOKIDAR_USEPOLLING: "true"
+      WATCHPACK_POLLING: "true"
+    depends_on:
+      printhub-api:
+        condition: service_started
+      printhub-sdk:
+        condition: service_started
+    ports:
+      - "5174:5174"
+    volumes:
+      - ../LabelGallery:/workspace/LabelGallery
+      - ../printhub-sdk:/workspace/printhub-sdk
+      - ./dev/labelgallery.config.js:/workspace/LabelGallery/config.js:ro
+      - printhub_sdk_node_modules:/workspace/printhub-sdk/node_modules
+      - labelgallery_node_modules:/workspace/LabelGallery/node_modules
+    command: >
+      sh -c "npm install --package-lock=false &&
+      mkdir -p node_modules/@printhub &&
+      rm -rf node_modules/@printhub/sdk &&
+      ln -s /workspace/printhub-sdk node_modules/@printhub/sdk &&
+      until [ -f /workspace/printhub-sdk/dist/index.js ]; do echo 'waiting for PrintHub SDK build'; sleep 2; done &&
+      npm run dev -- --host 0.0.0.0 --port 5174"
+
+  labelarchitect:
+    image: node:20-alpine
+    container_name: thingdex-dev-labelarchitect
+    working_dir: /workspace/LabelArchitect
+    environment:
+      CHOKIDAR_USEPOLLING: "true"
+      WATCHPACK_POLLING: "true"
+      VITE_BACKEND_API_BASE: http://localhost:8001
+      VITE_RENDER_API_BASE: http://localhost:8001
+      VITE_OPERATOR_APP_BASE: http://localhost:5174
+    depends_on:
+      printhub-api:
+        condition: service_started
+      printhub-sdk:
+        condition: service_started
+    ports:
+      - "5175:5175"
+    volumes:
+      - ../LabelArchitect:/workspace/LabelArchitect
+      - ../printhub-sdk:/workspace/printhub-sdk
+      - printhub_sdk_node_modules:/workspace/printhub-sdk/node_modules
+      - labelarchitect_node_modules:/workspace/LabelArchitect/node_modules
+    command: >
+      sh -c "npm install --package-lock=false &&
+      mkdir -p node_modules/@printhub &&
+      rm -rf node_modules/@printhub/sdk &&
+      ln -s /workspace/printhub-sdk node_modules/@printhub/sdk &&
+      until [ -f /workspace/printhub-sdk/dist/index.js ]; do echo 'waiting for PrintHub SDK build'; sleep 2; done &&
+      npm run dev -- --host 0.0.0.0 --port 5175"
+
+volumes:
+  thingdex_dev_pgdata:
+  printhub_dev_data:
+  thingdex_sdk_node_modules:
+  printhub_sdk_node_modules:
+  thingdex_ui_node_modules:
+  labelgallery_node_modules:
+  labelarchitect_node_modules:

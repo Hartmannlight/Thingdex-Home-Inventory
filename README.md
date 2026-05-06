@@ -995,6 +995,64 @@ Das erlaubt:
 - lokale Contract-Updates ohne Publish-Schritt,
 - und konsistente API-Weiterentwicklung ueber mehrere Projekte hinweg.
 
+### Docker-Dev-Stack unter Windows
+
+Voraussetzungen:
+
+- Docker Desktop
+
+Start:
+
+```powershell
+cd C:\Users\hartm\Desktop\Thingdex-full\Thingdex-Home-Inventory
+docker compose -f docker-compose.dev.yml up -d
+```
+
+Der erste Start baut Images und installiert npm-Abhaengigkeiten in Docker-Volumes.
+Danach bleiben die Container warm; Code wird aus den lokalen Repos per Bind-Mount
+in die Container gelegt und von Vite beziehungsweise uvicorn automatisch neu
+geladen.
+
+Der Dev-Stack startet:
+
+| Dienst | URL |
+|---|---|
+| Thingdex API | `http://localhost:8000/docs` |
+| PrintHub API | `http://localhost:8001/docs` |
+| ThingdexUI | `http://localhost:5173` |
+| LabelGallery | `http://localhost:5174` |
+| LabelArchitect | `http://localhost:5175` |
+
+Weitere Befehle:
+
+```powershell
+docker compose -f docker-compose.dev.yml ps
+docker compose -f docker-compose.dev.yml logs -f thingdex-api
+docker compose -f docker-compose.dev.yml logs -f printhub-api
+docker compose -f docker-compose.dev.yml down
+```
+
+Wenn sich Python- oder npm-Abhaengigkeiten aendern, den betroffenen Container
+neu bauen:
+
+```powershell
+docker compose -f docker-compose.dev.yml up -d --build thingdex-api
+docker compose -f docker-compose.dev.yml up -d --build printhub-api
+docker compose -f docker-compose.dev.yml restart thingdex-ui labelgallery labelarchitect
+```
+
+Die SDKs laufen als eigene Watch-Container. Aenderungen in `thingdex-sdk` und
+`printhub-sdk` werden in deren `dist/` gebaut, waehrend die Frontends weiter
+laufen.
+
+Warum Docker hier der richtige Standard ist: Thingdex braucht PostgreSQL,
+PrintHub braucht Linux/native Bibliotheken wie `libdmtx`, und die Frontends
+brauchen konsistente `file:`-Dependencies auf die lokalen SDK-Repos. Dieses Setup
+haelt alles in Linux-Containern, ohne nach jeder Codeaenderung neu zu bauen.
+
+Hinweis: PNG-Previews nutzen Labelary ueber PrintHub. Ohne Internetverbindung
+laufen APIs und UIs weiter, aber Preview-Endpunkte koennen dann fehlschlagen.
+
 ---
 
 ## Entwicklungsworkflow
