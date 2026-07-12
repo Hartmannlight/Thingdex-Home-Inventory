@@ -1,5 +1,11 @@
 # Thingdex Home Inventory
 
+> **Rewrite note:** LabelArchitect and LabelGallery are being consolidated into
+> **PrintHub Studio**. The canonical target architecture and migration steps are
+> documented in [`PRINTHUB_REWRITE_PLAN.md`](PRINTHUB_REWRITE_PLAN.md). Sections
+> below that describe both legacy UIs separately are retained as migration
+> history.
+
 Zentrales Uebersichts- und Architektur-Repository fuer das **Thingdex Home Inventory**-Oekosystem.
 
 Dieses Repository ist der Einstiegspunkt fuer das gesamte System. Es beschreibt,
@@ -1030,8 +1036,7 @@ Der Dev-Stack startet:
 | PrintHub API | `http://localhost:8001/docs` |
 | ZPL-II Printer Emulator | `http://localhost:9191` |
 | ThingdexUI | `http://localhost:5173` |
-| LabelGallery | `http://localhost:5174` |
-| LabelArchitect | `http://localhost:5175` |
+| PrintHub Studio | `http://localhost:5174` |
 
 Weitere Befehle:
 
@@ -1050,7 +1055,7 @@ neu bauen:
 docker compose -f docker-compose.dev.yml up -d --build thingdex-api
 docker compose -f docker-compose.dev.yml up -d --build printhub-api
 docker compose -f docker-compose.dev.yml up -d --build zpl-printer-emulator
-docker compose -f docker-compose.dev.yml restart thingdex-ui labelgallery labelarchitect
+docker compose -f docker-compose.dev.yml restart thingdex-ui printhub-studio
 ```
 
 Die SDKs laufen als eigene Watch-Container. Aenderungen in `thingdex-sdk` und
@@ -1077,6 +1082,8 @@ aber Preview- und Emulator-Rendering koennen dann fehlschlagen.
 ---
 
 ## Entwicklungsworkflow
+
+Der koordinierte Production- und Contract-Release-Prozess ist in [RELEASE.md](RELEASE.md) beschrieben.
 
 Wenn sich eine API aendert, sollte die Reihenfolge immer sein:
 
