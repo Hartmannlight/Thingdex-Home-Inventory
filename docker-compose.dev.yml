@@ -85,7 +85,7 @@ services:
     command: sh -c "alembic upgrade head && uvicorn thingdex.main:app --host 0.0.0.0 --port 8000 --reload"
 
   thingdex-sdk:
-    image: node:20-alpine
+    image: node:22-alpine
     container_name: thingdex-dev-thingdex-sdk
     working_dir: /workspace/thingdex-sdk
     environment:
@@ -96,7 +96,7 @@ services:
     command: sh -c "npm install --package-lock=false && npm run generate && npx tsc -p tsconfig.json --watch --preserveWatchOutput"
 
   printhub-sdk:
-    image: node:20-alpine
+    image: node:22-alpine
     container_name: thingdex-dev-printhub-sdk
     working_dir: /workspace/printhub-sdk
     environment:
@@ -107,7 +107,7 @@ services:
     command: sh -c "npm install --package-lock=false && npm run generate && npx tsc -p tsconfig.json --watch --preserveWatchOutput"
 
   thingdex-ui:
-    image: node:20-alpine
+    image: node:22-alpine
     container_name: thingdex-dev-ui
     working_dir: /workspace/ThingdexUI
     environment:
@@ -142,7 +142,7 @@ services:
       npm run dev -- --host 0.0.0.0 --port 5173"
 
   printhub-studio:
-    image: node:20-alpine
+    image: node:22-alpine
     container_name: thingdex-dev-printhub-studio
     working_dir: /workspace/LabelArchitect
     environment:
