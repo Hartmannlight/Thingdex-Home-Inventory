@@ -25,6 +25,7 @@ services:
       PRINTER_FLEET_SEED_PATH: /app/config/printers.yml
       PRINTER_FLEET_MDNS_ENABLED: "0"
       PRINTER_FLEET_API_TOKEN: dev-fleet-token
+      PRINTER_FLEET_API_CALLER_ID: printhub
     volumes:
       - printer_fleet_dev_data:/data
       - ./dev/printhub-printers.yml:/app/config/printers.yml:ro
