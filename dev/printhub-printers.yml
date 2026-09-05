@@ -6,7 +6,7 @@ printers:
     vendor: Local
     driver: zpl
     connection:
-      protocol: raw9100
+      protocol: raw_tcp
       host: zpl-printer-emulator
       port: 9100
       timeout_ms: 3000

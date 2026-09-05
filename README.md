@@ -872,25 +872,16 @@ Im Repository ist er als **zplgrid** beschrieben.
 
 #### Printers / Printing
 
-- `POST /v1/printers/{printer_id}/prints/zpl`
-- `POST /v1/printers/{printer_id}/prints/template`
+- `POST /v1/print-jobs`
+- `POST /v1/print-jobs/document`
 - `GET /v1/printers`
 - `GET /v1/printers/{printer_id}`
-- `PUT /v1/printers/{printer_id}`
-- `GET /v1/printers/{printer_id}/status`
 
 ### Drucker-Modell
 
-PrintHub verwaltet Drucker explizit als konfigurierte Ressourcen.
-
-Ein Drucker hat mindestens:
-
-- Verbindungsdaten
-- Media-Informationen
-- Alignment-Daten
-- ZPL-Druckparameter
-- Defaults
-- Capabilities
+PrinterFleet verwaltet physische Drucker, Endpunkte, Medienzustand, Alignment,
+Treiberoptionen und Capabilities. PrintHub liest nur einen bereinigten Snapshot
+für Auswahl und Preflight; Verbindungsdaten bleiben an der Fleet-Grenze.
 
 ### Warum dieser Service getrennt ist
 
@@ -898,14 +889,16 @@ Das ist eine sehr gute Trennung, weil PrintHub Dinge kapselt, die im Inventar-Ba
 
 - Template-Rendering
 - Preview-Generierung
-- Drucker-Protokollierung
-- physischer Druck ueber Netzwerk
+- logische Druckjobs und Preflight
+- geräteunabhängige vorbereitete Rasterartefakte
 - Template-Storage
 - Draft-Lebenszyklen
 
 ### Contract-Rolle
 
-PrintHub exportiert heute seinen API-Contract fuer `printhub-sdk`. Damit ist PrintHub nicht nur Service-Endpunkt, sondern auch die Quelle der label- und printer-bezogenen Frontend-Vertraege.
+PrintHub exportiert seinen API-Contract fuer `printhub-sdk`. Physische
+Administration ist ein eigener PrinterFleet-Contract und gehört nicht in das
+PrintHub-SDK.
 
 ---
 

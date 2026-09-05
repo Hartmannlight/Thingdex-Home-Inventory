@@ -24,8 +24,8 @@ services:
       PRINTER_FLEET_DATABASE: /data/fleet.sqlite3
       PRINTER_FLEET_SEED_PATH: /app/config/printers.yml
       PRINTER_FLEET_MDNS_ENABLED: "0"
-      PRINTER_FLEET_API_TOKEN: dev-fleet-token
-      PRINTER_FLEET_API_CALLER_ID: printhub
+      PRINTER_FLEET_CREDENTIALS_JSON: >-
+        {"credentials":[{"id":"printhub","token":"development-printhub-token","roles":["observer","submitter"],"sites":["default"]},{"id":"developer-admin","token":"development-fleet-admin-token","roles":["admin"],"sites":["*"]}]}
     volumes:
       - printer_fleet_dev_data:/data
       - ./dev/printhub-printers.yml:/app/config/printers.yml:ro
@@ -49,7 +49,7 @@ services:
       ZPLGRID_CORS_ORIGINS: "http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174,http://localhost:5175,http://127.0.0.1:5175"
       WATCHFILES_FORCE_POLLING: "true"
       PRINTHUB_FLEET_API_URL: http://printer-fleet:8000
-      PRINTHUB_FLEET_API_TOKEN: dev-fleet-token
+      PRINTHUB_FLEET_API_TOKEN: development-printhub-token
       PRINTHUB_THINGDEX_EVENT_URL: http://thingdex-api:8000/v1/integrations/printhub/events
       PRINTHUB_THINGDEX_EVENT_SECRET: dev-event-secret
     depends_on:
@@ -59,7 +59,6 @@ services:
       - "8001:8000"
     volumes:
       - ../PrintHub-ZPL-ll:/app
-      - ./dev/printhub-printers.yml:/app/configs/printers.yml:ro
       - printhub_dev_data:/data
     command: uvicorn zplgrid.api:app --host 0.0.0.0 --port 8000 --reload
 

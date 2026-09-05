@@ -57,8 +57,7 @@ PrintHub API -------- template store
         +------------ PrintAgent ------- USB Zebra / future Niimbot
 ```
 
-PrintAgent announces `_print-agent._tcp.local.` and the temporary legacy
-`_zpl-agent._tcp.local.` name. PrinterFleet, not PrintHub or Thingdex, owns
+PrintAgent announces `_print-agent._tcp.local.`. PrinterFleet, not PrintHub or Thingdex, owns
 discovery and explicit agent registration.
 
 ## Template contract
