@@ -24,6 +24,7 @@ services:
       PRINTER_FLEET_DATABASE: /data/fleet.sqlite3
       PRINTER_FLEET_SEED_PATH: /app/config/printers.yml
       PRINTER_FLEET_MDNS_ENABLED: "0"
+      PRINTER_FLEET_API_TOKEN: dev-fleet-token
     volumes:
       - printer_fleet_dev_data:/data
       - ./dev/printhub-printers.yml:/app/config/printers.yml:ro
@@ -47,6 +48,7 @@ services:
       ZPLGRID_CORS_ORIGINS: "http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174,http://localhost:5175,http://127.0.0.1:5175"
       WATCHFILES_FORCE_POLLING: "true"
       PRINTHUB_FLEET_API_URL: http://printer-fleet:8000
+      PRINTHUB_FLEET_API_TOKEN: dev-fleet-token
     depends_on:
       printer-fleet:
         condition: service_started
