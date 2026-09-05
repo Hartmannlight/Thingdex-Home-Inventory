@@ -115,6 +115,7 @@ services:
       PRINTHUB_API_BASE: http://printhub-api:8000
       THINGDEX_PRINT_WORKER_INTERVAL_SECONDS: "1"
       THINGDEX_PRINT_MAX_ATTEMPTS: "10"
+      THINGDEX_RUN_MIGRATIONS: "false"
     depends_on:
       thingdex-api:
         condition: service_healthy
