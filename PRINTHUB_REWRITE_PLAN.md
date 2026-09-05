@@ -2,22 +2,40 @@
 
 ## Product boundary
 
-The ecosystem is split into two independently deployable products.
+The ecosystem is split into independently deployable products and bounded
+runtime services. Product boundaries do not force unrelated failure domains
+into one process.
 
 ### Thingdex
 
 - Owns inventory, locations, item types, relations and scanner workflows.
 - Runs without PrintHub and keeps label printing disabled by default.
-- May use an optional PrintHub connector for automatic label jobs.
+- Uses a transactional outbox and a separately running PrintHub connector for
+  automatic label jobs.
 - Does not own templates, printers, ZPL, media or device status.
 
 ### PrintHub Studio
 
 - Owns templates, typed template fields, sample data, preview and rendering.
 - Owns the desktop designer and the mobile quick-print workflow.
-- Owns printer registrations and print workflow status.
-- Sends rendered ZPL to ZebraTamer or a legacy raw-9100 target.
+- Owns logical print jobs and their preparation status.
+- Submits immutable device artifacts to PrinterFleet.
 - Runs without Thingdex and supports arbitrary manual/API-provided data.
+
+### PrinterFleet
+
+- Owns physical printer registrations, media observations, routing, delivery
+  attempts, RAW TCP/serial-over-TCP and device status.
+- Connects directly to reachable network printers.
+- Uses PrintAgent only for USB, Bluetooth, local serial or isolated networks.
+- Does not own templates, inventory data, scaling, dithering or preview.
+
+### IPP gateway and PrintAgent
+
+- The optional IPP gateway advertises a CUPS queue and forwards original source
+  documents plus IPP tickets to PrintHub.
+- PrintAgent is an optional edge process. ZebraTamer is its current compatible
+  implementation; network printers do not require it.
 
 `LabelGallery` is superseded by the Templates, Quick print and Printers views in
 PrintHub Studio. Its repository remains available during migration but is not a
@@ -30,17 +48,18 @@ PrintHub Studio web
         |
         v
 PrintHub API -------- template store
-    |   |
-    |   +------------ render/preview
-    |
-    +---------------- ZebraTamer REST API
-                            |
-                            +---- USB/character-device Zebra printer
+        |
+        +------------ document preparation / preview
+        |
+        v
+  PrinterFleet ------- direct RAW 9100 Zebra
+        |
+        +------------ PrintAgent ------- USB Zebra / future Niimbot
 ```
 
-ZebraTamer announces `_zpl-agent._tcp.local.` and `_zpl-printer._tcp.local.`.
-PrintHub discovers these announcements, or uses explicit agent URLs from
-`ZPLGRID_ZEBRA_TAMER_AGENTS` when multicast DNS is unavailable.
+PrintAgent announces `_print-agent._tcp.local.` and the temporary legacy
+`_zpl-agent._tcp.local.` name. PrinterFleet, not PrintHub or Thingdex, owns
+discovery and explicit agent registration.
 
 ## Template contract
 
@@ -88,15 +107,16 @@ every create form:
 ```
 
 ThingdexUI sends only inventory data in the normal workflow. Thingdex resolves
-the optional profile and creates an idempotent, persistent PrintHub job after
-the inventory transaction. A missing PrintHub never prevents Thingdex from
-starting or saving inventory. Operators see job state and retry failed jobs in
-PrintHub Studio.
+the optional profile and commits an immutable PrintIntent in the same database
+transaction as the inventory object. A separate worker submits it idempotently
+to PrintHub. A missing PrintHub never prevents Thingdex from starting or saving
+inventory. Signed, replay-safe events return PrintHub state to Thingdex.
 
 ## Migration phases
 
 1. Deploy the new PrintHub API and Studio alongside LabelGallery.
-2. Register ZebraTamer printers in PrintHub and verify status/job handoff.
+2. Register physical printers and PrintAgents in PrinterFleet and verify status
+   and idempotent delivery handoff.
 3. Migrate existing templates without changing their v1 layout.
 4. Move operators to the mobile Quick print view.
 5. Remove LabelGallery from the default Compose topology.
@@ -111,3 +131,6 @@ PrintHub Studio.
 - Quick print works at 390 px without horizontal overflow.
 - ZebraTamer jobs return a job id and state to PrintHub.
 - Raw-9100 printers remain supported during migration.
+- Thingdex inventory and PrintIntent commit atomically while PrintHub is down.
+- An expired worker lease resubmits with the same idempotency key.
+- The integrated stack runs Thingdex API and print worker as separate processes.

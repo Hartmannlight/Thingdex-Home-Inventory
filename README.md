@@ -6,6 +6,12 @@
 > below that describe both legacy UIs separately are retained as migration
 > history.
 
+> **Current platform boundary:** PrintHub now owns document preparation and
+> logical jobs; PrinterFleet owns physical printers and direct RAW-9100 or
+> PrintAgent delivery. Thingdex commits requested prints to a transactional
+> outbox and a separate worker submits them. Older diagrams below that show
+> PrintHub talking directly to printers are migration history.
+
 Zentrales Uebersichts- und Architektur-Repository fuer das **Thingdex Home Inventory**-Oekosystem.
 
 Dieses Repository ist der Einstiegspunkt fuer das gesamte System. Es beschreibt,
