@@ -120,10 +120,10 @@ flowchart LR
     User --> LA[LabelArchitect]
     User --> LG[LabelGallery]
 
-    UI --> TSDK[@thingdex/sdk]
-    UI --> PSDK1[@printhub/sdk]
-    LA --> PSDK2[@printhub/sdk]
-    LG --> PSDK3[@printhub/sdk]
+    UI --> TSDK["@thingdex/sdk"]
+    UI --> PSDK1["@printhub/sdk"]
+    LA --> PSDK2["@printhub/sdk"]
+    LG --> PSDK3["@printhub/sdk"]
 
     TSDK --> TD[Thingdex API]
     PSDK1 --> PH[PrintHub / zplgrid]
@@ -152,7 +152,7 @@ flowchart TB
     subgraph ThingdexPfad[Thingdex-Vertrag]
         TDCode[Thingdex Backend-Code]
         TDOA[Thingdex OpenAPI]
-        TSDK[@thingdex/sdk]
+        TSDK["@thingdex/sdk"]
         TUI[ThingdexUI]
         TDCode --> TDOA --> TSDK --> TUI
     end
@@ -160,7 +160,7 @@ flowchart TB
     subgraph PrintHubPfad[PrintHub-Vertrag]
         PHCode[PrintHub Backend-Code]
         PHOA[PrintHub OpenAPI]
-        PSDK[@printhub/sdk]
+        PSDK["@printhub/sdk"]
         LA[LabelArchitect]
         LG[LabelGallery]
         TUI2[ThingdexUI optionale PrintHub-Zugriffe]
@@ -436,7 +436,7 @@ Diese Contracts sind keine Fachobjekte wie Items oder Templates, aber sie sind i
 sequenceDiagram
     participant User
     participant UI as ThingdexUI
-    participant SDK as @thingdex/sdk
+    participant SDK as "@thingdex/sdk"
     participant TD as Thingdex API
     participant DB as PostgreSQL
 
@@ -471,7 +471,7 @@ sequenceDiagram
 sequenceDiagram
     participant User
     participant LA as LabelArchitect
-    participant SDK as @printhub/sdk
+    participant SDK as "@printhub/sdk"
     participant PH as PrintHub API
 
     User->>LA: Template bearbeiten
@@ -504,7 +504,7 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     participant UI as ThingdexUI
-    participant TSDK as @thingdex/sdk
+    participant TSDK as "@thingdex/sdk"
     participant TD as Thingdex API
     participant PH as PrintHub API
     participant PR as Printer
