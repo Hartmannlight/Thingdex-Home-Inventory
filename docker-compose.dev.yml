@@ -50,6 +50,8 @@ services:
       WATCHFILES_FORCE_POLLING: "true"
       PRINTHUB_FLEET_API_URL: http://printer-fleet:8000
       PRINTHUB_FLEET_API_TOKEN: dev-fleet-token
+      PRINTHUB_THINGDEX_EVENT_URL: http://thingdex-api:8000/v1/integrations/printhub/events
+      PRINTHUB_THINGDEX_EVENT_SECRET: dev-event-secret
     depends_on:
       printer-fleet:
         condition: service_started
