@@ -1,0 +1,34 @@
+name: CI
+'on':
+  push: null
+  pull_request: null
+  workflow_dispatch: null
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+    - name: Validate project
+      run: docker compose -f docker-compose.dev.yml config --quiet
+  maintenance-gate:
+    name: ci-gate
+    if: always()
+    needs:
+    - verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+    - name: Require every check
+      env:
+        RESULTS: ${{ toJSON(needs) }}
+      run: |
+        python3 - <<'PY'
+        import json, os
+        results = json.loads(os.environ['RESULTS'])
+        failed = {name: value['result'] for name, value in results.items() if value['result'] not in ('success',)}
+        if failed:
+            raise SystemExit(str(failed))
+        PY
