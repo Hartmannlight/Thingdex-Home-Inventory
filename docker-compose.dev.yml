@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres:15
+    image: postgres:15@sha256:9b1d34adbce1dd07ee6e94b4a2cf698884b89bd44a6c9c12f5da8f3acbfe4957
     container_name: thingdex-dev-db
     environment:
       POSTGRES_USER: thingdex
@@ -130,7 +130,7 @@ services:
     command: python -m thingdex.print_worker
 
   thingdex-sdk:
-    image: node:22-alpine
+    image: node:22-alpine@sha256:c610fcdfb1d5b4740dd70c284ed3cb16bb857e0f7166196e36a5501df7a3aa32
     container_name: thingdex-dev-thingdex-sdk
     working_dir: /workspace/thingdex-sdk
     environment:
@@ -141,7 +141,7 @@ services:
     command: sh -c "npm install --package-lock=false && npm run generate && npx tsc -p tsconfig.json --watch --preserveWatchOutput"
 
   printhub-sdk:
-    image: node:22-alpine
+    image: node:22-alpine@sha256:c610fcdfb1d5b4740dd70c284ed3cb16bb857e0f7166196e36a5501df7a3aa32
     container_name: thingdex-dev-printhub-sdk
     working_dir: /workspace/printhub-sdk
     environment:
@@ -152,7 +152,7 @@ services:
     command: sh -c "npm install --package-lock=false && npm run generate && npx tsc -p tsconfig.json --watch --preserveWatchOutput"
 
   thingdex-ui:
-    image: node:22-alpine
+    image: node:22-alpine@sha256:c610fcdfb1d5b4740dd70c284ed3cb16bb857e0f7166196e36a5501df7a3aa32
     container_name: thingdex-dev-ui
     working_dir: /workspace/ThingdexUI
     environment:
@@ -187,7 +187,7 @@ services:
       npm run dev -- --host 0.0.0.0 --port 5173"
 
   printhub-studio:
-    image: node:22-alpine
+    image: node:22-alpine@sha256:c610fcdfb1d5b4740dd70c284ed3cb16bb857e0f7166196e36a5501df7a3aa32
     container_name: thingdex-dev-printhub-studio
     working_dir: /workspace/LabelArchitect
     environment:
